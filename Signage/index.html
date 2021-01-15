@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>FIDS</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf8"/>
+		
+		<!-- Use your remote cordova-cd library location 		 -->
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova/2.7.0/cordova.webos.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/signage.js"></script>
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/storage.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/configuration.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/deviceInfo.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/inputSource.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/power.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3//sound.js"></script>  
+		<script type="text/javascript" src="../com.lg.app.signage/js/cordova-cd/1.3/video.js"></script>
+		
+		<script type="text/javascript" src="../com.lg.app.signage/js/jquery-3.2.1.js"></script>
+		
+    <link rel="stylesheet" type="text/css" href="./style/style.css">
+
+	</head>
+<body>
+<!-- <h1 id="result">000</h1> -->
+
+ <iframe id="desk" src="load.html" width="1920" height="1080" align="left" frameborder="0">
+ </iframe>
+
+	<script type="text/javascript">
+	
+	var ws;
+	var WiredState;
+	var IpAddress;
+	var MacAddress;
+	var SerialNumber;	
+	
+	function doCapture() {
+		var data1 = "";
+		console.log("Got Data size:");
+	    var options = {
+	        save : true,
+	        thumbnail : false
+	};
+	 
+	    var successCB = function (cbObject) {
+	        var size = cbObject.size;
+	        var encoding = cbObject.encoding;
+	        data1 = String (cbObject.data);
+	        
+	        var pic = {
+					"id" : "screen_mon",
+					"val" : data1
+			};
+			var scrn_s = JSON.stringify(pic);
+			ws.send(scrn_s);
+			console.log(scrn_s);
+	        
+	        var capturedElement = document.getElementById('captured_img');
+	        capturedElement.src = 'data:image/jpeg;base64,' + data1;
+	       		   
+	    };
+	 
+	    var failureCB = function (cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	 
+	        console.log("Error Code [" + errorCode + "]: " + errorText);
+	    }
+	 
+	    var signage = new Signage();
+	    signage.captureScreen(successCB, failureCB, options);
+	   
+	}
+	function setPowerSaveMode() {
+	    var options = {
+	        powerSaveMode: {
+	            ses: false,
+	            dpmMode: Signage.DpmMode.OFF,
+	            automaticStandby: Signage.AutomaticStandbyMode.OFF,
+	            do15MinOff: false
+	        }
+	    };
+	 
+	    var successCb = function () {
+	        console.log("successfully Set");
+	    };
+	 
+	    var failureCb = function (cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	        console.log(" Error Code [" + errorCode + "]: " + errorText);
+	    };
+	 
+	    var signage = new Signage();
+	    signage.setPowerSaveMode(successCb, failureCb, options);
+	}
+	function doReboot() {
+	    var options = {};
+	    options.powerCommand = Power.PowerCommand.REBOOT;
+	 
+	    function successCb() {
+	        // Do something
+	    }
+	 
+	    function failureCb(cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	 
+	        console.log("Error Code [" + errorCode + "]: " + errorText);
+	    }
+	 
+	    var power = new Power();
+	    power.executePowerCommand(successCb, failureCb, options);
+	}
+	
+	function getNetworkInfo() {
+	    function successCb(cbObject) {
+	        // console.log("[Network Info] : " + JSON.stringify(cbObject));
+	        var theElement = document.getElementById('result');
+	        WiredState = cbObject.wired.state;
+	        IpAddress = String (cbObject.wired.ipAddress);
+	        console.log(WiredState);
+	        console.log(IpAddress);
+	        //theElement.innerHTML = WiredState;
+	        //ws.send(WiredState);
+	        //Do something
+	    };
+	 
+	    function failureCb(cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	 
+	        console.log("Error Code [" + errorCode + "]: " + errorText);
+	    };
+	 
+	    var deviceInfo = new DeviceInfo();
+	    deviceInfo.getNetworkInfo(successCb, failureCb);
+	}
+	
+	function getSoundStatus () {
+	    function successCb(cbObject) {
+	        //console.log("cbObject : " + JSON.stringify(cbObject));
+	        console.log("wiredInfo.macAddress : " + cbObject.wiredInfo.macAddress);
+	        //console.log("wifiInfo.macAddress : " + cbObject.wifiInfo.macAddress);
+	        MacAddress =  String (cbObject.wiredInfo.macAddress);
+	        // Do something
+	    }
+	 
+	    function failureCb(cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	         
+	        console.log ("Error Code [" + errorCode + "]: " + errorText);
+	    }
+	 
+	    var deviceInfo = new DeviceInfo();
+	    deviceInfo.getNetworkMacInfo(successCb, failureCb);
+	}
+	
+	function getPlatformInfo () {
+	    function successCb(cbObject) {
+	        console.log("[Platform Info] : " + JSON.stringify(cbObject));
+	        SerialNumber = cbObject.serialNumber;
+	        // Do something
+	    }
+	 
+	    function failureCb(cbObject) {
+	        var errorCode = cbObject.errorCode;
+	        var errorText = cbObject.errorText;
+	         
+	        console.log ("Error Code [" + errorCode + "]: " + errorText);
+	    }
+	 
+	    var deviceInfo = new DeviceInfo();
+	    deviceInfo.getPlatformInfo(successCb, failureCb);
+	}
+	
+	function SendTest () {
+		var cart = {
+				"MacAddress" : MacAddress,
+				"SerialNumber" : SerialNumber,
+				"NetworkStatus" : WiredState
+		};
+		var str = JSON.stringify(cart);
+		console.log (str);
+		ws.send(str);
+	}
+	
+	
+	function Socket () {	
+		ws = new WebSocket("ws://***:2346/?user=" + IpAddress);
+		ws.onmessage = function(e) {
+			var command = JSON.parse (e.data);
+			if (command.id == "desk_src")
+				{
+			//setTimeout(doReboot, 5000);
+			//console.log (e.data);
+			document.getElementById('desk').src = command.val;
+				}
+			if (command.id == "capture")
+			{
+				doCapture();
+			}
+	    };
+	}
+	
+	function CheckConnect () {
+		if (ws.readyState != 1)
+			{
+			if (document.getElementById('desk').src != "file:///media/developer/apps/usr/palm/applications/com.lg.app.signage/load.html")
+				{
+					document.getElementById('desk').src = "load.html";
+				}
+			Socket();
+			}
+	}
+	
+	//setInterval(getSoundStatus, 4000);
+	//setInterval(getPlatformInfo, 4000);
+	setInterval(getNetworkInfo, 4000);
+	
+	
+	//setTimeout(doCapture, 5000);
+	setTimeout(setPowerSaveMode, 5000);
+	//setInterval(SendTest, 5000);
+	//setTimeout(doCapture, 5000);
+	setTimeout(Socket, 6000);
+	setInterval(CheckConnect, 10000);
+	</script>
+
+</body>
+</html>
